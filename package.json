@@ -1,0 +1,41 @@
+{
+  "name": "webpack-versioner",
+  "version": "0.0.1",
+  "description": "Cron-based versions scheduler for Webpack",
+  "main": "./lib/index",
+  "bin": {
+    "webpack-versioner": "./lib/cli"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jbgutierrez/webpack-versioner.git"
+  },
+  "keywords": [
+    "webpack",
+    "semver",
+    "manifest-file",
+    "workflow"
+  ],
+  "author": "Javier Blanco <http://jbgutierrez.info>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jbgutierrez/webpack-versioner/issues"
+  },
+  "homepage": "https://github.com/jbgutierrez/webpack-versioner",
+  "dependencies": {
+    "MD5": "^1.2.1",
+    "cron-parser": "^0.6.1",
+    "webpack": "^1.8.4"
+  },
+  "devDependencies": {
+    "coffee-script": "latest",
+    "mocha": "latest",
+    "rewire": "latest"
+  }
+}
