@@ -142,19 +142,11 @@ class ManifestFile extends File
     super false
 
 module.exports =
-  run: (file, dir) ->
-    manifest = new ManifestFile [dir, 'versions.manifest.json'].join path.sep
+  run: (file, manifest) ->
+    manifest = new ManifestFile manifest
     VersionScheduler.setup manifest.json['release-schedules']
 
     module = new File file
     if module.versionate()
       manifest.versionate(module)
       debug "bundling version #{manifest.version.number}"
-      dir = if pathIsAbsolute dir then dir else [process.cwd(), dir].join path.sep
-      config = require [dir, 'webpack.config.js'].join path.sep
-      webpack config, (err, stats) ->
-        if err
-          console.error err.stack || err
-          console.error err.details if err.details
-        else
-          manifest.versionate(module)

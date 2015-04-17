@@ -1,16 +1,20 @@
-fs   = require 'fs'
-path = require 'path'
+fs     = require 'fs'
+path   = require 'path'
 
-module.exports = (dirname) ->
-  manifest = [dirname, 'versions.manifest.json'].join path.sep
-  config = JSON.parse fs.readFileSync manifest
+parseManifest = (manifestPath) ->
+  config = JSON.parse fs.readFileSync manifestPath
   modules = config.modules
   alias = {}
-  for moduleName, moduleVersion of modules
-    moduleVersion = moduleVersion.replace('=', '')
-    alias[moduleName] = path.join dirname, 'modules/versions/' + moduleName + '-v.' + moduleVersion
+  for moduleName, version of modules
+    version = version.replace '=', ''
+    modulePath = path.join 'versions', moduleName + '-v.' + version
+    console.log modulePath
+    alias[moduleName] = modulePath
 
-  moduleVersion = config['build-info'].$version.split('@')[0]
+  version = config['build-info'].$version.split('@')[0]
 
-  version: moduleVersion
+  version: version
   alias: alias
+
+module.exports =
+  parseManifest: parseManifest

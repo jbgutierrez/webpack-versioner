@@ -1,4 +1,4 @@
 workflow = require './workflow'
-[_, __main, file, dir] = process.argv
+[_, __main, file, manifest] = process.argv
 
-workflow.run file, dir
+workflow.run file, manifest
