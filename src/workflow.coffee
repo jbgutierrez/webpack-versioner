@@ -107,7 +107,7 @@ class File
   annotate: ->
     @version.update()
     anotations = [ 'author', 'updated', 'version' ].join('|')
-    re = new RegExp "(\")?\\$(#{anotations})\\1: \\1.*\\1", "g"
+    re = new RegExp "(\")?\\$(#{anotations})\\1: ?\\1.*\\1", "g"
     @contents = @contents.replace re, (_, quote, annotation) =>
       quote = quote or ''
       "#{quote}$#{annotation}#{quote}: #{quote}#{@version[annotation]}#{quote}"
