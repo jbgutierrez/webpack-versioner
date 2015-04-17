@@ -1,8 +1,10 @@
-fs      = require 'fs'
-path    = require 'path'
-parser  = require 'cron-parser'
-md5     = require 'md5'
-webpack = require 'webpack'
+fs             = require 'fs'
+path           = require 'path'
+parser         = require 'cron-parser'
+md5            = require 'md5'
+webpack        = require 'webpack'
+pathIsAbsolute = require 'path-is-absolute'
+pathParse      = require 'path-parse'
 
 DEBUG = false
 debug = (msg) ->
@@ -83,9 +85,9 @@ class Version
 
 class File
   constructor: (p) ->
-    fullpath = if path.isAbsolute p then p else [process.cwd(), p].join path.sep
+    fullpath = if pathIsAbsolute p then p else [process.cwd(), p].join path.sep
     @fullpath = path.normalize fullpath
-    this[key] = value for key, value of path.parse @fullpath
+    this[key] = value for key, value of pathParse @fullpath
     @contents = fs.readFileSync(@fullpath).toString() if fs.existsSync @fullpath
     @version = new Version this
 
@@ -148,7 +150,7 @@ module.exports =
     if module.versionate()
       manifest.versionate(module)
       debug "bundling version #{manifest.version.number}"
-      dir = if path.isAbsolute dir then dir else [process.cwd(), dir].join path.sep
+      dir = if pathIsAbsolute dir then dir else [process.cwd(), dir].join path.sep
       config = require [dir, 'webpack.config.js'].join path.sep
       webpack config, (err, stats) ->
         if err

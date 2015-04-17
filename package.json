@@ -30,12 +30,18 @@
   "homepage": "https://github.com/jbgutierrez/webpack-versioner",
   "dependencies": {
     "MD5": "^1.2.1",
-    "cron-parser": "^0.6.1",
-    "webpack": "^1.8.4"
+    "cron-parser": "~0.6.1",
+    "path-is-absolute": "^1.0.0",
+    "path-parse": "^1.0.3",
+    "webpack": "^1.8.5"
   },
   "devDependencies": {
     "coffee-script": "latest",
     "mocha": "latest",
     "rewire": "latest"
-  }
+  },
+  "engines": {
+    "node": ">=0.10.12"
+  },
+  "preferGlobal": true
 }
