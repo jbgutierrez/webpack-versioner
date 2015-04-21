@@ -91,12 +91,12 @@ class File
     @contents = fs.readFileSync(@fullpath).toString() if fs.existsSync @fullpath
     @version = new Version this
 
-  versionate: (saveCopy=true)->
-
+  touch: ->
     if @version.changed
       @annotate()
       @save()
-      @save @version.fullpath() if saveCopy
+      @save @version.fullpath()
+      debug "touching #{@base}"
       true
     else
       debug "current and previous versions of #{@base} are identical"
@@ -131,7 +131,7 @@ class ManifestFile extends File
     super p
     @json = JSON.parse @contents
 
-  versionate: (module) ->
+  touch: (module) ->
     modules = @json.modules
     re = new RegExp "=|#{module.version}"
     return if modules[module.name] and re.test modules[module.name]
@@ -139,7 +139,9 @@ class ManifestFile extends File
 
     @contents = JSON.stringify @json, null, '  '
 
-    super false
+    @annotate()
+    @save()
+    debug "touching #{@base}"
 
 module.exports =
   run: (file, manifest) ->
@@ -147,6 +149,5 @@ module.exports =
     VersionScheduler.setup manifest.json['release-schedules']
 
     module = new File file
-    if module.versionate()
-      manifest.versionate(module)
-      debug "bundling version #{manifest.version.number}"
+    if module.touch()
+      manifest.touch module
