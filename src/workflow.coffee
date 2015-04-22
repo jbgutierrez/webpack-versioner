@@ -36,39 +36,18 @@ class Version
   constructor: (@file) ->
     @author = process.env.USER or process.env.USERNAME
     @updated = new Date().toISOString()
+    [@number, @lastHash] = ManifestFile.info @file
 
-    error = """
-      Please make sure your file '#{@file.fullpath}' has the following `magic comments`:
+    @file.annotate()
+    @hash = (md5 @file.contents).substring 0, 6
 
-        // $version: 1.0
-        // $author:
-        // $updated:
-
-      """
-
-    if /("?)\$updated\1: ?\1(.*)\1/.test @file.contents
-      @lastUpdated = if RegExp.$2 then new Date RegExp.$2 else new Date
-    else
-      throw error
-
-    if /("?)\$version\1: \1(\d+\.\d+)@?(.*)\1/.test @file.contents
-      [@number, @lastHash] = [RegExp.$2, RegExp.$3]
-    else
-      throw error
-
-    version = "#{@number}@#{@lastHash}"
-    @file.contents = @file.
-      contents.
-      replace(version, @number).
-      replace(@lastUpdated.toISOString(), '')
-    @hash = md5(@file.contents).substring 0, 6
-
+    @frozed = not @number
     @changed = @lastHash isnt @hash or DEBUG
 
   update: ->
-    if @lastUpdated < VersionScheduler.releasedAt
+    if @lastHash and ManifestFile.lastUpdated < VersionScheduler.releasedAt
       @increment()
-      debug "saving version #{@number} of #{@file.base}"
+      debug "will save new version #{@number} of #{@file.base}"
 
     @version = "#{@number}@#{@hash}"
 
@@ -89,23 +68,27 @@ class File
     @fullpath = path.normalize fullpath
     this[key] = value for key, value of pathParse @fullpath
     @contents = fs.readFileSync(@fullpath).toString() if fs.existsSync @fullpath
-    @version = new Version this
+    @version = {}
 
   touch: ->
-    if @version.changed
-      @annotate()
-      @save()
-      @save @version.fullpath()
-      debug "touching #{@base}"
-      true
-    else
-      debug "current and previous versions of #{@base} are identical"
+    @version = new Version this
+    switch
+      when @version.frozed
+        debug "current version of #{@base} is frozen"
+      when @version.changed
+        @version.update()
+        @annotate()
+        @save()
+        @save @version.fullpath()
+        debug "touching #{@base}"
+        true
+      else
+        debug "current version of #{@base} is up to date"
 
   save: (fullpath=@fullpath) ->
     fs.writeFileSync fullpath, @contents
 
   annotate: ->
-    @version.update()
     anotations = [ 'author', 'updated', 'version' ].join('|')
     re = new RegExp "(\")?\\$(#{anotations})\\1: ?\\1.*\\1", "g"
     @contents = @contents.replace re, (_, quote, annotation) =>
@@ -113,6 +96,7 @@ class File
       "#{quote}$#{annotation}#{quote}: #{quote}#{@version[annotation]}#{quote}"
 
 class ManifestFile extends File
+  @load: (p) -> @instance = new ManifestFile p
   constructor: (p) ->
     error = """
       Please create the manifest file at '#{p}':
@@ -133,19 +117,35 @@ class ManifestFile extends File
 
   touch: (module) ->
     modules = @json.modules
-    re = new RegExp "=|#{module.version}"
-    return if modules[module.name] and re.test modules[module.name]
-    modules[module.name] = module.version.number
+    return if /=/.test modules[module.name]
+    modules[module.name] = module.version.version
 
+    @version = new Version this
     @contents = JSON.stringify @json, null, '  '
 
+    @version.update()
     @annotate()
     @save()
     debug "touching #{@base}"
 
+  @info: (file) ->
+    version = if file is @instance
+      @instance.json['build-info'].$version
+    else
+      @instance.json.modules[file.name]
+
+    if /^(\d+\.\d+)@?(.*)$/.test version
+      [RegExp.$1, RegExp.$2]
+    else if version
+      [false, false]
+    else
+      /\$version: (\d+\.\d+)/.test file.contents
+      number = RegExp.$1 or "1.0"
+      [number, false]
+
 module.exports =
   run: (file, manifest) ->
-    manifest = new ManifestFile manifest
+    manifest = ManifestFile.load manifest
     VersionScheduler.setup manifest.json['release-schedules']
 
     module = new File file
