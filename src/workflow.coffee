@@ -68,7 +68,22 @@ class File
     @fullpath = path.normalize fullpath
     this[key] = value for key, value of pathParse @fullpath
     @contents = fs.readFileSync(@fullpath).toString() if fs.existsSync @fullpath
+
     @version = {}
+
+  save: (fullpath=@fullpath) ->
+    fs.writeFileSync fullpath, @contents
+
+  annotate: ->
+    anotations = [ 'author', 'updated', 'version' ].join('|')
+    re = new RegExp "(\")?\\$(#{anotations})\\1: ?\\1.*\\1", "g"
+    @contents = @contents.replace re, (_, quote, annotation) =>
+      quote = quote or ''
+      "#{quote}$#{annotation}#{quote}: #{quote}#{@version[annotation]}#{quote}"
+
+class SourceFile extends File
+  constructor: (p) ->
+    super p
 
   touch: ->
     @version = new Version this
@@ -84,16 +99,6 @@ class File
         true
       else
         debug "current version of #{@base} is up to date"
-
-  save: (fullpath=@fullpath) ->
-    fs.writeFileSync fullpath, @contents
-
-  annotate: ->
-    anotations = [ 'author', 'updated', 'version' ].join('|')
-    re = new RegExp "(\")?\\$(#{anotations})\\1: ?\\1.*\\1", "g"
-    @contents = @contents.replace re, (_, quote, annotation) =>
-      quote = quote or ''
-      "#{quote}$#{annotation}#{quote}: #{quote}#{@version[annotation]}#{quote}"
 
 class ManifestFile extends File
   @load: (p) -> @instance = new ManifestFile p
@@ -148,6 +153,6 @@ module.exports =
     manifest = ManifestFile.load manifest
     VersionScheduler.setup manifest.json['release-schedules']
 
-    module = new File file
+    module = new SourceFile file
     if module.touch()
       manifest.touch module
