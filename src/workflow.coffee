@@ -84,6 +84,10 @@ class File
 class SourceFile extends File
   constructor: (p) ->
     super p
+    if ManifestFile.instance.dir isnt @dir
+      namespace = path.relative ManifestFile.instance.dir, @dir
+      @dir = ManifestFile.instance.dir
+      @name = [ namespace, @name ].join '/'
 
   touch: ->
     @version = new Version this
