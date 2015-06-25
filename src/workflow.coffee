@@ -6,7 +6,7 @@ webpack        = require 'webpack'
 pathIsAbsolute = require 'path-is-absolute'
 pathParse      = require 'path-parse'
 
-DEBUG = false
+DEBUG = process.env.DEBUG
 debug = (msg) ->
   console.log "DEBUG: #{msg}"
 
@@ -28,8 +28,6 @@ class VersionScheduler
           @releasedAt = sync if sync > @releasedAt
       catch
 
-    @releasedAt = now if DEBUG
-
     debug "last rsync took place at #{@releasedAt}"
 
 class Version
@@ -42,10 +40,10 @@ class Version
     @hash = (md5 @file.contents).substring 0, 6
 
     @frozed = not @number
-    @changed = @lastHash isnt @hash or DEBUG
+    @changed = @lastHash isnt @hash
 
   update: ->
-    if @lastHash and ManifestFile.lastUpdated < VersionScheduler.releasedAt
+    if @lastHash and @file.updated < VersionScheduler.releasedAt
       @increment()
       debug "will save new version #{@number} of #{@file.base}"
 
@@ -68,6 +66,8 @@ class File
     @fullpath = path.normalize fullpath
     this[key] = value for key, value of pathParse @fullpath
     @contents = fs.readFileSync(@fullpath).toString() if fs.existsSync @fullpath
+    if /(")?\$updated\1: ?\1(.*)\1/.test @contents
+      @updated = new Date RegExp.$2
 
     @version = {}
 
