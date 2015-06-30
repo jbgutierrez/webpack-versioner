@@ -6,7 +6,7 @@ parseManifest = (manifestPath) ->
   modules = config.modules
   alias = {}
   for moduleName, version of modules
-    version = version.replace '=', ''
+    version = version.split('@')[0].replace('=', '')
     modulePath = path.join 'versions', moduleName + '-v.' + version
     console.log modulePath
     alias[moduleName] = modulePath
