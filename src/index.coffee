@@ -5,8 +5,8 @@ parseManifest = (manifestPath) ->
   config = JSON.parse fs.readFileSync manifestPath
   modules = config.modules
   alias = {}
-  for moduleName, version of modules
-    version = version.split('@')[0].replace('=', '')
+  for moduleName, moduleConfig of modules
+    version = moduleConfig.version.split('@')[0].replace('=', '')
     modulePath = path.join 'versions', moduleName + '-v.' + version
     console.log modulePath
     alias[moduleName] = modulePath

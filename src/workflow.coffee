@@ -10,6 +10,9 @@ DEBUG = process.env.DEBUG
 debug = (msg) ->
   console.log "DEBUG: #{msg}"
 
+USER = process.env.USER or process.env.USERNAME
+NOW = new Date().toISOString()
+
 class VersionScheduler
   @setup: (expressions) ->
     now = new Date
@@ -32,9 +35,9 @@ class VersionScheduler
 
 class Version
   constructor: (@file) ->
-    @author = process.env.USER or process.env.USERNAME
-    @updated = new Date().toISOString()
-    [@number, @lastHash] = ManifestFile.info @file
+    @author = USER
+    @updated = NOW
+    [@number, @lastHash, @lastUpdated] = ManifestFile.info @file
 
     @file.annotate()
     @hash = (md5 @file.contents).substring 0, 6
@@ -43,7 +46,7 @@ class Version
     @changed = @lastHash isnt @hash
 
   update: ->
-    if @lastHash and @file.updated < VersionScheduler.releasedAt
+    if @lastHash and @lastUpdated < VersionScheduler.releasedAt
       @increment()
       debug "will save new version #{@number} of #{@file.base}"
 
@@ -66,9 +69,6 @@ class File
     @fullpath = path.normalize fullpath
     this[key] = value for key, value of pathParse @fullpath
     @contents = fs.readFileSync(@fullpath).toString() if fs.existsSync @fullpath
-    if /(")?\$updated\1: ?\1(.*)\1/.test @contents
-      @updated = new Date RegExp.$2
-
     @version = {}
 
   save: (fullpath=@fullpath) ->
@@ -126,8 +126,11 @@ class ManifestFile extends File
 
   touch: (module) ->
     modules = @json.modules
-    return if /=/.test modules[module.name]
-    modules[module.name] = module.version.version
+    return if /=/.test modules[module.name]?.version
+    modules[module.name] =
+      version: module.version.version
+      author: USER
+      updated: NOW
 
     @version = new Version this
     @contents = JSON.stringify @json, null, '  '
@@ -138,19 +141,18 @@ class ManifestFile extends File
     debug "touching #{@base}"
 
   @info: (file) ->
-    version = if file is @instance
-      @instance.json['build-info'].$version
-    else
-      @instance.json.modules[file.name]
+    info = if file is @instance then @instance.json['build-info'] else @instance.json.modules[file.name] || {}
+    version = info.version || info.$version
+    updated =  new Date info.$updated || info.updated
 
     if /^(\d+\.\d+)@?(.*)$/.test version
-      [RegExp.$1, RegExp.$2]
+      [RegExp.$1, RegExp.$2, updated]
     else if version
-      [false, false]
+      [false, false, updated]
     else
       /\$version: (\d+\.\d+)/.test file.contents
       number = RegExp.$1 or "1.0"
-      [number, false]
+      [number, false, updated]
 
 module.exports =
   run: (file, manifest) ->
