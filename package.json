@@ -10,6 +10,7 @@
     "test": "test"
   },
   "scripts": {
+    "prepublish": "make",
     "test": "make test"
   },
   "repository": {
