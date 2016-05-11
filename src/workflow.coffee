@@ -126,8 +126,8 @@ class ManifestFile extends File
 
   touch: (module) ->
     modules = @json.modules
-    return if /=/.test modules[module.name]?.version
-    modules[module.name] =
+    return if /=/.test modules[module.base]?.version
+    modules[module.base] =
       version: module.version.version
       author: USER
       updated: NOW
@@ -141,7 +141,7 @@ class ManifestFile extends File
     debug "touching #{@base}"
 
   @info: (file) ->
-    info = if file is @instance then @instance.json['build-info'] else @instance.json.modules[file.name] || {}
+    info = if file is @instance then @instance.json['build-info'] else @instance.json.modules[file.base] || {}
     version = info.version || info.$version
     updated =  new Date info.$updated || info.updated
 

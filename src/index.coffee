@@ -1,5 +1,5 @@
-fs     = require 'fs'
-path   = require 'path'
+fs        = require 'fs'
+path      = require 'path'
 
 parseManifest = (manifestPath) ->
   config = JSON.parse fs.readFileSync manifestPath
@@ -7,7 +7,7 @@ parseManifest = (manifestPath) ->
   alias = {}
   for moduleName, moduleConfig of modules
     version = moduleConfig.version.split('@')[0].replace('=', '')
-    modulePath = path.join 'versions', moduleName + '-v.' + version
+    modulePath = path.join 'versions', moduleName.replace /\.?(coffee|es6|scss|json)?$/, (ext) -> "-v.#{version}#{ext}"
     console.log modulePath
     alias[moduleName] = modulePath
 
