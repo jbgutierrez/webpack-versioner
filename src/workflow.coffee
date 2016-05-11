@@ -150,8 +150,7 @@ class ManifestFile extends File
     else if version
       [false, false, updated]
     else
-      /\$version: (\d+\.\d+)/.test file.contents
-      number = RegExp.$1 or "1.0"
+      number = "1.0"
       [number, false, updated]
 
 module.exports =
