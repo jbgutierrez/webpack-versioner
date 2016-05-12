@@ -1,6 +1,6 @@
 {
   "name": "webpack-versioner",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Cron-based versions scheduler for Webpack",
   "main": "./lib/index",
   "bin": {
@@ -31,6 +31,7 @@
   "homepage": "https://github.com/jbgutierrez/webpack-versioner",
   "dependencies": {
     "MD5": "^1.2.1",
+    "chokidar": "^1.5.0",
     "cron-parser": "~0.6.1",
     "path-is-absolute": "^1.0.0",
     "path-parse": "^1.0.5",

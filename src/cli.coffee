@@ -1,12 +1,20 @@
-workflow = require './workflow'
 path = require 'path'
-[_, __main, file, manifest] = process.argv
+[_, __main, option1, option2] = process.argv
 
 usage = ->
   basename = path.basename __main
-  console.error "usage: #{basename} file.coffee versions.manifest.json"
+  console.error """
+usage: #{basename} <option>
+options:
+   modules/module_name versions.manifest.json - Handles module versioning
+  #{basename} -w, --watch                     - Hires/fires webpack watcher upon versioning changes
+"""
 
-if file and manifest
-  workflow.run file, manifest
-else
-  usage()
+switch
+  when /-w|--watch/.test option1
+    require './watcher'
+  when option1 and option2
+    [file, manifest] = [option1, option2]
+    require('./workflow').run file, manifest
+  else
+    usage()
