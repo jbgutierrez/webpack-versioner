@@ -7,8 +7,12 @@ pathIsAbsolute = require 'path-is-absolute'
 pathParse      = require 'path-parse'
 
 DEBUG = process.env.DEBUG
-debug = (msg) ->
-  console.log "DEBUG: #{msg}"
+
+info = (args...) ->
+  console.log "INFO:", args...
+
+debug = (args...) ->
+  console.log "DEBUG:", args... if DEBUG
 
 USER = process.env.USER or process.env.USERNAME
 NOW = new Date().toISOString()
@@ -31,13 +35,14 @@ class VersionScheduler
           @releasedAt = sync if sync > @releasedAt
       catch
 
-    debug "last rsync took place at #{@releasedAt}"
+    info "last rsync took place at #{@releasedAt}"
 
 class Version
   constructor: (@file) ->
     @author = USER
     @updated = NOW
     [@number, @lastHash, @lastUpdated] = ManifestFile.info @file
+    debug "*->", [@number, @lastHash, @lastUpdated]
 
     @file.annotate()
     @hash = (md5 @file.contents).substring 0, 6
@@ -48,7 +53,7 @@ class Version
   update: ->
     if @lastHash and @lastUpdated < VersionScheduler.releasedAt
       @increment()
-      debug "will save new version #{@number} of #{@file.base}"
+      info "will save new version #{@number} of #{@file.base}"
 
     @version = "#{@number}@#{@hash}"
 
@@ -82,27 +87,20 @@ class File
       "#{quote}$#{annotation}#{quote}: #{quote}#{@version[annotation]}#{quote}"
 
 class SourceFile extends File
-  constructor: (p) ->
-    super p
-    if ManifestFile.instance.dir isnt @dir
-      namespace = path.relative ManifestFile.instance.dir, @dir
-      @dir = ManifestFile.instance.dir
-      @name = [ namespace, @name ].join '/'
-
   touch: ->
     @version = new Version this
     switch
       when @version.frozed
-        debug "current version of #{@base} is frozen"
+        info "current version of #{@base} is frozen"
       when @version.changed
         @version.update()
         @annotate()
         @save()
         @save @version.fullpath()
-        debug "touching #{@base}"
+        info "touching #{@base}"
         true
       else
-        debug "current version of #{@base} is up to date"
+        info "current version of #{@base} is up to date"
 
 class ManifestFile extends File
   @load: (p) -> @instance = new ManifestFile p
@@ -138,12 +136,12 @@ class ManifestFile extends File
     @version.update()
     @annotate()
     @save()
-    debug "touching #{@base}"
+    info "touching #{@base}"
 
   @info: (file) ->
-    info = if file is @instance then @instance.json['build-info'] else @instance.json.modules[file.base] || {}
-    version = info.version || info.$version
-    updated =  new Date info.$updated || info.updated
+    meta = if file is @instance then @instance.json['build-info'] else @instance.json.modules[file.base] || {}
+    version = meta.version || meta.$version
+    updated =  new Date meta.$updated || meta.updated
 
     if /^(\d+\.\d+)@?(.*)$/.test version
       [RegExp.$1, RegExp.$2, updated]
@@ -154,8 +152,9 @@ class ManifestFile extends File
       [number, false, updated]
 
 module.exports =
-  run: (file, manifest) ->
-    manifest = ManifestFile.load manifest
+  run: (file) ->
+    dir = pathParse(file).dir
+    manifest = ManifestFile.load [dir, '..', 'versions.manifest.json'].join path.sep
     VersionScheduler.setup manifest.json['release-schedules']
 
     module = new SourceFile file
