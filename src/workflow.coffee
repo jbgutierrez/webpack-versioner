@@ -5,6 +5,7 @@ md5            = require 'md5'
 webpack        = require 'webpack'
 pathIsAbsolute = require 'path-is-absolute'
 pathParse      = require 'path-parse'
+mkdirp         = require 'mkdirp'
 
 DEBUG = process.env.DEBUG
 
@@ -69,8 +70,11 @@ class Version
     minor = number % 10000 + 1
     @number = "#{major}.#{minor}"
 
-  filename: -> "#{@file.name}-v.#{@number}#{@file.ext}"
-  fullpath: -> [@file.dir, 'versions', @filename()].join path.sep
+  fullpath: ->
+    namespace = path.relative PROJECT_ROOT, @file.dir
+    mkdirp.sync dir = [PROJECT_ROOT, 'versions', namespace].join path.sep
+    filename = "#{@file.name}-v.#{@number}#{@file.ext}"
+    [ dir, filename ].join path.sep
 
 class File
   constructor: (p) ->
@@ -163,7 +167,7 @@ class ManifestFile extends File
 module.exports =
   run: (file) ->
     dir = pathParse(file).dir
-    manifest = ManifestFile.load [dir, '..', 'versions.manifest.json'].join path.sep
+    manifest = ManifestFile.load [PROJECT_ROOT, 'versions.manifest.json'].join path.sep
     VersionScheduler.setup manifest.json['release-schedules']
 
     module = new SourceFile file

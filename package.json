@@ -1,6 +1,6 @@
 {
   "name": "webpack-versioner",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Cron-based versions scheduler for Webpack",
   "main": "./lib/index",
   "bin": {
@@ -33,6 +33,7 @@
     "MD5": "^1.2.1",
     "chokidar": "^1.5.0",
     "cron-parser": "~0.6.1",
+    "mkdirp": "^0.5.1",
     "path-is-absolute": "^1.0.0",
     "path-parse": "^1.0.5",
     "webpack": "^1.8.5"
