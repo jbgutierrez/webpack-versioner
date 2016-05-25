@@ -1,6 +1,6 @@
 {
   "name": "webpack-versioner",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Cron-based versions scheduler for Webpack",
   "main": "./lib/index",
   "bin": {

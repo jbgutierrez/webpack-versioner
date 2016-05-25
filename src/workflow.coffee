@@ -41,13 +41,17 @@ class Version
   constructor: (@file) ->
     @author = USER
     @updated = NOW
-    [@number, @lastHash, @lastUpdated] = ManifestFile.info @file
-    debug "*->", [@number, @lastHash, @lastUpdated]
+
+    if @versionable = ManifestFile.versionable @file
+      [@number, @lastHash, @lastUpdated] = ManifestFile.info @file
+      debug "*->", [@number, @lastHash, @lastUpdated]
+    else
+      @version = "0.0"
 
     @file.annotate()
     @hash = (md5 @file.contents).substring 0, 6
 
-    @frozed = not @number
+    @frozen = @versionable and not @number
     @changed = @lastHash isnt @hash
 
   update: ->
@@ -90,13 +94,13 @@ class SourceFile extends File
   touch: ->
     @version = new Version this
     switch
-      when @version.frozed
+      when @version.frozen
         info "current version of #{@base} is frozen"
       when @version.changed
         @version.update()
         @annotate()
         @save()
-        @save @version.fullpath()
+        @save @version.fullpath() if @version.versionable
         info "touching #{@base}"
         true
       else
@@ -150,6 +154,11 @@ class ManifestFile extends File
     else
       number = "1.0"
       [number, false, updated]
+
+  @versionable: (file) ->
+    return true if file is @instance
+    versionable = @instance.json['versionable-regex']
+    not versionable or new RegExp(versionable).test file.fullpath
 
 module.exports =
   run: (file) ->
